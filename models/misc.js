@@ -2,6 +2,7 @@ var bcrypt = require("bcryptjs")
 var jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer")
 const os = require("os")
+const crypto = require("crypto")
 
 
 var sendMail = exports.sendMail = async (mail) => {
@@ -17,12 +18,19 @@ var sendMail = exports.sendMail = async (mail) => {
             pass: password
         }
     })
-    var info = await transporter.sendMail({
+    try {
+        var info = await transporter.sendMail({
         from: ` User Admin<${account}>`,
         to: `${mail.email}`,
         subject: `${mail.subject}`,
-        text: `${mail.text}`
+        text: `${mail.text}`,
+        
     })
+    } catch (error) {
+        throw error;
+    }
+    
+    
 }
 var generateToken = exports.generateToken = async function (data) {
     var secretKey = "This is True";
@@ -61,12 +69,15 @@ exports.comparePassword = async function (password, hash) {
 
 exports.sendCodeMail = async function (userdetails) {
     console.log(userdetails);
+    var secretCode = generateSecretCode()
 
     var mail = {};
-
+    mail.code = secretCode
     mail.to = userdetails.email;
     mail.subject = 'Verify Email'
     var token = await generateToken(userdetails)
+
+    
     const message = `
     Use the following URL to sign in: 
     http://${os.hostname()}/verify/token?${token}`
@@ -74,4 +85,8 @@ exports.sendCodeMail = async function (userdetails) {
 
     sendMail(mail);
 
+}
+
+var generateSecretCode = exports.generateSecretCode = ()=>{
+    return crypto.randomBytes(6).toString('utf-8')
 }

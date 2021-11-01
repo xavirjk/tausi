@@ -68,7 +68,13 @@ user.pre('save', async function (next) {
 })
 
 methods.sendCodeMail = async function (email) {
-
+    try {
+        var details = await this.findByEmail(email)
+        await sendCodeMail(details)
+        return true
+    } catch (error) {
+        return null
+    }
 }
 
 

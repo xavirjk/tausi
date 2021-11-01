@@ -29,11 +29,20 @@ const shortCodeSchema = Schema({
 
 const {methods, statics} = shortCodeSchema;
 
-statics.pre('save',function(){
-
+statics.pre('save',function(next){
+    // ! change to findone and update for the phone Numbers or save 
+    var details = db.findByEmail(this.email)
+    if (!details){
+        var details = db.findByPhoneNumber(this.phoneNumber)
+        if(!details){
+            next()
+        }
+    }
+    details.code = this.code
+    next()
 })
 
-statics.findByEmail = async function(email){
+methods.findByEmail = async function(email){
     details = await this.findOne({email})
     return details;
 }
@@ -43,12 +52,23 @@ statics.findByPhoneNumber = async function(phoneNumber){
     return details;
 }
 
-methods.verifyByEmail = async function(){
-
+statics.verifyByEmail = async function(email,code){
+    var details = this.findByEmail(email)
+    if (details){
+        if (details.code === code){
+            return true
+        }
+    }
+    return null
 }
 
-methods.verifyByPhoneNumber =  async function(){
-
+methods.verifyByPhoneNumber =  async function(phoneNumber,code){
+    var details = this.findByPhoneNumber(phoneNumber)
+    if (details){
+        if (details.code === code){
+            return true
+        }
+    }
 }
 
-module.exports = mongoose.model('Short_Codes',shortCodeSchema)
+var db = module.exports = mongoose.model('Short_Codes',shortCodeSchema)
