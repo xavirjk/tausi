@@ -6,9 +6,9 @@ var bcrypt = require('bcryptjs')
 
 const {
     Schema
-} = new mongoose
+} = mongoose
 
-const user = Schema({
+const user = new Schema({
     firstName: {
         type: String,
         required: true,
@@ -100,6 +100,6 @@ statics.findByEmail = async function (email) {
 
 
 
-const userModel = mongoose.model('Users', user)
+const userModel = mongoose.model('USERS', user)
 
 module.exports = userModel;
