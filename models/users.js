@@ -1,6 +1,7 @@
 var mongoose = require('mongoose')
 var {
-    hashPassword,sendCodeMail
+    hashPassword,
+    sendCodeMail
 } = require("./misc")
 var bcrypt = require('bcryptjs')
 
@@ -8,6 +9,8 @@ const {
     Schema
 } = mongoose
 
+
+// ! Custom required for details regarding phone Number and email
 const user = new Schema({
     firstName: {
         type: String,
@@ -49,8 +52,8 @@ const user = new Schema({
 })
 
 const {
-    methods,
-    statics
+    method,
+    static
 } = user;
 
 user.pre('save', async function (next) {
@@ -67,7 +70,7 @@ user.pre('save', async function (next) {
 
 })
 
-methods.sendCodeMail = async function (email) {
+method.sendCodeMail = async function (email) {
     try {
         var details = await this.findByEmail(email)
         await sendCodeMail(details)
@@ -79,22 +82,22 @@ methods.sendCodeMail = async function (email) {
 
 
 
-statics.findByPhoneNumber = async function (number) {
+static.findByPhoneNumber = async function (number) {
     //  todo: validate input 
     if (!number instanceof Number) {
         return null
     }
     var details = await this.findOne({
         phoneNumber: number
-    })
+    }).select("firstName lastName email phoneNumber registered");
     return details;
 }
 
-statics.findByEmail = async function (email) {
+static.findByEmail = async function (email) {
     email = email.tolowercase();
     var details = await this.findOne({
         email
-    });
+    }).select("firstName lastName email phoneNumber registered");
     return details;
 }
 

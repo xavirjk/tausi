@@ -20,17 +20,17 @@ var sendMail = exports.sendMail = async (mail) => {
     })
     try {
         var info = await transporter.sendMail({
-        from: ` User Admin<${account}>`,
-        to: `${mail.email}`,
-        subject: `${mail.subject}`,
-        text: `${mail.text}`,
-        
-    })
+            from: ` User Admin<${account}>`,
+            to: `${mail.email}`,
+            subject: `${mail.subject}`,
+            text: `${mail.text}`,
+
+        })
     } catch (error) {
         throw error;
     }
-    
-    
+
+
 }
 var generateToken = exports.generateToken = async function (data) {
     var secretKey = "This is True";
@@ -77,7 +77,7 @@ exports.sendCodeMail = async function (userdetails) {
     mail.subject = 'Verify Email'
     var token = await generateToken(userdetails)
 
-    
+
     const message = `
     Use the following URL to sign in: 
     http://${os.hostname()}/verify/token?${token}`
@@ -87,6 +87,6 @@ exports.sendCodeMail = async function (userdetails) {
 
 }
 
-var generateSecretCode = exports.generateSecretCode = ()=>{
+var generateSecretCode = exports.generateSecretCode = () => {
     return crypto.randomBytes(6).toString('utf-8')
 }

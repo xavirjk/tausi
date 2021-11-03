@@ -1,52 +1,60 @@
 const mongoose = require("mongoose")
 
-const { Schema } = mongoose;
+const {
+    Schema
+} = mongoose;
 
 
 const productSchema = new Schema({
-    productName:{
-        type:String,
-        required:true
+    productName: {
+        type: String,
+        required: true
     },
-    category:{
-        type:Schema.Types.ObjectId,
-        ref:"Category"
+    category: {
+        type: Schema.Types.ObjectId,
+        ref: "categoryModel"
     },
-    description:{
-        type:String
+    description: {
+        type: String
     },
-    discount:{
-        type:Number,
-        min:0,
-        max:70,
-        default:10
+    discount: {
+        type: Number,
+        min: 0,
+        max: 70,
+        default: 10
     },
-    productPic:[{
-        location:{
-            type:String
+    productPic: [{
+        location: {
+            type: String
         }
     }],
-    variety:[{
-        quantity:{
-            type:String,
+    variety: [{
+        quantity: {
+            type: String,
         },
-        price:{
-            type:Number
+        price: {
+            type: Number
         },
-        color:{
-            type:String
-        }  
+        color: {
+            type: String
+        }
     }]
+},{
+    timestamps:true,
+    collection:"PRODCUTS"
 })
-const {method,static} = productSchema;
+const {
+    method,
+    static
+} = productSchema;
 
-method.findByName = async function(){
+method.findByName = async function () {
     return
 }
 
-method.findByCategory = async function(){
+method.findByCategory = async function () {
     return
 }
 
-var productModel = mongoose.model("PRODUCTS",productSchema)
+var productModel = mongoose.model("PRODUCTS", productSchema)
 module.exports = productModel;

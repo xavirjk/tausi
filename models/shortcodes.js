@@ -4,10 +4,10 @@ const {
     Schema
 } = mongoose;
 
-const shortCodeSchema = Schema({
+const shortCodeSchema = new Schema({
     email: {
         type: String,
-        unique:true
+        unique: true
     },
     phoneNumber: {
         type: Number
@@ -15,7 +15,7 @@ const shortCodeSchema = Schema({
     code: {
         type: String,
         required: true,
-        unique:true
+        unique: true
     },
     createdAt: {
         type: Date,
@@ -27,14 +27,17 @@ const shortCodeSchema = Schema({
     timestamps: true
 })
 
-const {methods, statics} = shortCodeSchema;
+const {
+    method,
+    static
+} = shortCodeSchema;
 
-statics.pre('save',function(next){
+shortCodeSchema.pre('save', function (next) {
     // ! change to findone and update for the phone Numbers or save 
     var details = db.findByEmail(this.email)
-    if (!details){
+    if (!details) {
         var details = db.findByPhoneNumber(this.phoneNumber)
-        if(!details){
+        if (!details) {
             next()
         }
     }
@@ -42,33 +45,37 @@ statics.pre('save',function(next){
     next()
 })
 
-methods.findByEmail = async function(email){
-    details = await this.findOne({email})
+method.findByEmail = async function (email) {
+    details = await this.findOne({
+        email
+    })
     return details;
 }
 
-statics.findByPhoneNumber = async function(phoneNumber){
-    details =  await this.findOne({phoneNumber})
+static.findByPhoneNumber = async function (phoneNumber) {
+    details = await this.findOne({
+        phoneNumber
+    })
     return details;
 }
 
-statics.verifyByEmail = async function(email,code){
+static.verifyByEmail = async function (email, code) {
     var details = this.findByEmail(email)
-    if (details){
-        if (details.code === code){
+    if (details) {
+        if (details.code === code) {
             return true
         }
     }
     return null
 }
 
-methods.verifyByPhoneNumber =  async function(phoneNumber,code){
+method.verifyByPhoneNumber = async function (phoneNumber, code) {
     var details = this.findByPhoneNumber(phoneNumber)
-    if (details){
-        if (details.code === code){
+    if (details) {
+        if (details.code === code) {
             return true
         }
     }
 }
 
-var db = module.exports = mongoose.model('Short_Codes',shortCodeSchema)
+var db = module.exports = mongoose.model('Short_Codes', shortCodeSchema)
