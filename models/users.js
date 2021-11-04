@@ -1,7 +1,8 @@
 var mongoose = require('mongoose')
 var {
     hashPassword,
-    sendCodeMail
+    sendCodeMail,
+    comparePassword
 } = require("./misc")
 var bcrypt = require('bcryptjs')
 
@@ -42,7 +43,23 @@ const user = new Schema({
     registeredOn: {
         type: Date,
         default: Date.now
-    }
+    },
+    loginTracker: [{
+        location: {
+            type: String //API to check the location of an IP Address
+        },
+        ipAddress: {
+            type: String
+        },
+        time: {
+            type: Date,
+            default: Date.now
+        },
+        access: {
+            type: String,
+            // remenber to add the different modes using enum
+        }
+    }]
 }, {
     collection: 'user',
     timestamps: {
@@ -52,17 +69,25 @@ const user = new Schema({
 })
 
 const {
-    method,
-    static
+    methods,
+    statics
 } = user;
 
 user.pre('save', async function (next) {
     try {
+        var user = await userModel.findOne({
+            $or: [{
+                email: this.email
+            }, {
+                phoneNumber: this.phoneNumber
+            }]
+        })
+        if (user.length() != 0) {
+            next("The user already exists")
+        }
         var hash = await hashPassword(this.password)
         this.password = hash;
-        this.save()
 
-        // todo: Other Validation Steps
         next();
     } catch (error) {
         next(error)
@@ -70,9 +95,9 @@ user.pre('save', async function (next) {
 
 })
 
-method.sendCodeMail = async function (email) {
+methods.sendCodeMail = async function () {
     try {
-        var details = await this.findByEmail(email)
+        var details = await userModel.findByEmail(this.email)
         await sendCodeMail(details)
         return true
     } catch (error) {
@@ -80,9 +105,30 @@ method.sendCodeMail = async function (email) {
     }
 }
 
+statics.authenticate = async function (identifier, password) {
+    try {
+        var details = this.findOne({
+            $or: [{
+                email: identifier
+            }, {
+                phoneNumber: identifier
+            }]
+        }).select("password")
+        if (details.length() == 0) {
+            return false
+        }
+        var result = await comparePassword(password, details.password)
+        if (result) {
+            return true
+        }
+        return false
+    } catch (error) {
+        return false
+    }
 
+}
 
-static.findByPhoneNumber = async function (number) {
+statics.findByPhoneNumber = async function (number) {
     //  todo: validate input 
     if (!number instanceof Number) {
         return null
@@ -93,7 +139,7 @@ static.findByPhoneNumber = async function (number) {
     return details;
 }
 
-static.findByEmail = async function (email) {
+statics.findByEmail = async function (email) {
     email = email.tolowercase();
     var details = await this.findOne({
         email

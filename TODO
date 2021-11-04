@@ -2,6 +2,12 @@ Research :
         child referencing
         parent referencing
         method and static in mongoose schemas
+                methods --> used in the definition of the document ==> After we have reterieved it.
+                statics --> used to declare funstions that mongoose does not have 
+                        ===> retrieve custom functions
+                        --> this. defines the document saved in the db
+                pre(save) ==> this. defines the incoming document  not the document present
+                        next()- acts as a middleware for the mongoose function
 Ask:
         Coupons
 Configure: 

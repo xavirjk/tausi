@@ -23,6 +23,11 @@ const productSchema = new Schema({
         max: 70,
         default: 10
     },
+    tags:[{
+        tagName:{
+            type:String
+        }
+    }],
     productPic: [{
         location: {
             type: String
