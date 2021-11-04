@@ -94,6 +94,14 @@ user.pre('save', async function (next) {
     }
 
 })
+user.pre('updateOne',async function(next){
+    try{
+        next();
+    }catch(error){
+        next(error)
+    }
+    
+})
 
 methods.sendCodeMail = async function () {
     try {
