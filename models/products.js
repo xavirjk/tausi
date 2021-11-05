@@ -42,6 +42,9 @@ const productSchema = new Schema({
         },
         color: {
             type: String
+        },
+        other:{
+            type:String,
         }
     }]
 },{
