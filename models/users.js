@@ -44,6 +44,16 @@ const user = new Schema({
         type: Date,
         default: Date.now
     },
+    deleted: {
+        declared: {
+            type: Boolean,
+            default: false
+        },
+        when: {
+            type: Date,
+            default: Date.now
+        }
+    },
     loginTracker: [{
         location: {
             type: String //API to check the location of an IP Address
@@ -72,6 +82,7 @@ const {
     methods,
     statics
 } = user;
+
 
 user.pre('save', async function (next) {
     try {
@@ -128,6 +139,25 @@ statics.updatePassword = async function (email, password) {
         return False
     }
     return true
+}
+
+statics.deleteUser = async function(identifier){
+    let user = await userModel.findOneAndUpdate({
+        $or:[{
+            email:identifier
+        },{
+            phoneNumber:identifier
+        }]
+    },{
+        $set:{
+            "delete.declared":true,
+            "delete.when":Date.now()
+        }
+    })
+    if (user){
+        return true
+    }
+    return false
 }
 
 methods.sendCodeMail = async function () {
