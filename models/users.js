@@ -94,14 +94,41 @@ user.pre('save', async function (next) {
     }
 
 })
-user.pre('updateOne',async function(next){
-    try{
+user.pre('updateOne', async function (next) {
+    try {
+        if (this.password.length() != 0) {
+            next("Cannot update password")
+        }
+        var user = await userModel.findOne({
+            $or: [{
+                email: this.email
+            }, {
+                phoneNumber: this.phoneNumber
+            }]
+        })
+        if (user.length() != 0) {
+            next("Cannot update email or password")
+        }
         next();
-    }catch(error){
+    } catch (error) {
         next(error)
     }
-    
 })
+
+statics.updatePassword = async function (email, password) {
+    var hash = await hashPassword(password)
+    const user = userModel.findOneAndUpdate({
+        email
+    }, {
+        $set: {
+            password: hash
+        }
+    })
+    if (!user) {
+        return False
+    }
+    return true
+}
 
 methods.sendCodeMail = async function () {
     try {
@@ -113,7 +140,7 @@ methods.sendCodeMail = async function () {
     }
 }
 
-statics.authenticate = async function (identifier, password) {
+statics.authenticate = async function (identifier, password, host) {
     try {
         var details = this.findOne({
             $or: [{
@@ -122,13 +149,25 @@ statics.authenticate = async function (identifier, password) {
                 phoneNumber: identifier
             }]
         }).select("password")
-        if (details.length() == 0) {
+        if (!details) {
             return false
         }
         var result = await comparePassword(password, details.password)
         if (result) {
-            return true
+            var user = await userModel.findOneAndUpdate({
+                $or: [{
+                    email: identifier
+                }, {
+                    phoneNumber: identifier
+                }]
+            }, {
+                $push: {
+                    ipAddress: host
+                }
+            })
+            return user;
         }
+
         return false
     } catch (error) {
         return false
