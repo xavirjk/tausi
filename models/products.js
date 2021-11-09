@@ -1,5 +1,5 @@
 const mongoose = require("mongoose")
-
+const { categoryModel } = require('./categories')
 const {
     Schema
 } = mongoose;
@@ -23,9 +23,13 @@ const productSchema = new Schema({
         max: 70,
         default: 10
     },
-    tags:[{
-        tagName:{
-            type:String
+    price:{
+        type:Number,
+        min:0
+    },
+    tags: [{
+        tagName: {
+            type: String
         }
     }],
     productPic: [{
@@ -35,7 +39,8 @@ const productSchema = new Schema({
     }],
     variety: [{
         quantity: {
-            type: String,
+            type: Number,
+            default: 0
         },
         price: {
             type: Number
@@ -43,25 +48,39 @@ const productSchema = new Schema({
         color: {
             type: String
         },
-        other:{
-            type:String,
+        other: {
+            type: String,
         }
     }]
-},{
-    timestamps:true,
-    collection:"PRODCUTS"
+}, {
+    timestamps: true,
+    collection: "PRODCUTS"
 })
 const {
-    method,
-    static
+    methods,
+    statics
 } = productSchema;
 
-method.findByName = async function () {
-    return
+statics.findByName = async function (productName) {
+    var details = await productModel.findOne({
+        productName
+    }).select("-discount -category")
+    details.totalPrice = details.price * (details.discount/100);
+    return details;
 }
 
-method.findByCategory = async function () {
+statics.findByCategory = async function (categoryName) {
+    var categoryId = await categoryModel.findOne({categoryName}).select("id");
+    var products = await productModel.findOne({category:categoryId});
+    return products;
+}
+
+statics.findByPriceRange = async function (low, high) {
+    var details = await productModel.find()
     return
+}
+statics.findByTagName = async function (tagName) {
+    const details = await productModel.find({"tags.tagname":tagName});
 }
 
 var productModel = mongoose.model("PRODUCTS", productSchema)

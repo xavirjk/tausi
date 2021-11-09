@@ -20,14 +20,14 @@ const categorySchema = new Schema({
 })
 
 const {
-    method,
-    static
+    methods,
+    statics
 } = categorySchema;
 
-method.findCategoryName = async function () {
-    return
+statics.findCategoryName = async function (categoryName) {
+    var details = await categoryModel.findOne({categoryName})
+    return details
 }
 
 
-const categoryModel = mongoose.model("CATEGORY", categorySchema)
-module.exports = categoryModel;
+const categoryModel = exports.categoryModel =  mongoose.model("CATEGORY", categorySchema);
