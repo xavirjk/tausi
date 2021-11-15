@@ -73,8 +73,8 @@ const user = new Schema({
 }, {
     collection: 'user',
     timestamps: {
-        createdAt: created_at,
-        updatedAt: updated_at
+        createdAt: "created_at",
+        updatedAt: "updated_at"
     }
 })
 
@@ -95,6 +95,9 @@ user.pre('save', async function (next) {
         })
         if (user.length() != 0) {
             next("The user already exists")
+        }
+        if (this.password.length() <8){
+            next("password.length < 8")
         }
         var hash = await hashPassword(this.password)
         this.password = hash;
