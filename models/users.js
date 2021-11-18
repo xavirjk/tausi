@@ -4,7 +4,6 @@ var {
     sendCodeMail,
     comparePassword
 } = require("./misc")
-var bcrypt = require('bcryptjs')
 
 const {
     Schema
@@ -16,11 +15,13 @@ const user = new Schema({
     firstName: {
         type: String,
         required: true,
+        trim: true,
         lowercase: true
     },
     lastName: {
         type: String,
         required: true,
+        trim: true,
         lowercase: true
     },
     password: {
@@ -29,23 +30,35 @@ const user = new Schema({
     },
     email: {
         type: String,
-        required: true,
+        required: function () {
+            if (this.phoneNumber.length == 0) {
+                return false
+            }
+            return true
+        },
         lowercase: true
     },
     phoneNumber: {
         type: Number,
-        required: true
+        required: function () {
+            if (this.phoneNumber) {
+                return false
+            }
+            return true
+        }
     },
     registered: {
-        type: Boolean,
-        default: false
-    },
-    registeredOn: {
-        type: Date,
-        default: Date.now
+        status: {
+            type: Boolean,
+            default: false
+        },
+        when: {
+            type: Date,
+            default: Date.now
+        }
     },
     deleted: {
-        declared: {
+        status: {
             type: Boolean,
             default: false
         },
@@ -93,26 +106,37 @@ user.pre('save', async function (next) {
                 phoneNumber: this.phoneNumber
             }]
         })
-        if (user.length() != 0) {
+        
+        if (user) {
             next("The user already exists")
         }
-        if (this.password.length() <8){
+        if (this.password.length < 8) {
             next("password.length < 8")
         }
         var hash = await hashPassword(this.password)
+        /** 
+         * setting the required values in case they 
+         * are overwritten in the schema sent
+         */
         this.password = hash;
+        this.registered.status = false;
+        this.deleted.status = false;
 
         next();
     } catch (error) {
+        console.log(RangeError)
         next(error)
     }
 
 })
 user.pre('updateOne', async function (next) {
     try {
-        if (this.password.length() != 0) {
+        //check if there is a password to prevent it from being updated
+
+        if (this.password) {
             next("Cannot update password")
         }
+        // ! why is this necessary
         var user = await userModel.findOne({
             $or: [{
                 email: this.email
@@ -144,20 +168,20 @@ statics.updatePassword = async function (email, password) {
     return true
 }
 
-statics.deleteUser = async function(identifier){
+statics.deleteUser = async function (identifier) {
     let user = await userModel.findOneAndUpdate({
-        $or:[{
-            email:identifier
-        },{
-            phoneNumber:identifier
+        $or: [{
+            email: identifier
+        }, {
+            phoneNumber: identifier
         }]
-    },{
-        $set:{
-            "delete.declared":true,
-            "delete.when":Date.now()
+    }, {
+        $set: {
+            "delete.declared": true,
+            "delete.when": Date.now()
         }
     })
-    if (user){
+    if (user) {
         return true
     }
     return false
