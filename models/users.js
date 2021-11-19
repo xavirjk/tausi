@@ -30,22 +30,23 @@ const user = new Schema({
     },
     email: {
         type: String,
-        required: function () {
-            if (this.phoneNumber.length == 0) {
-                return false
-            }
-            return true
-        },
+        // required: function () {
+        //     if (this.phoneNumber.length == 0) {
+        //         return false
+        //     }
+        //     return true
+        // },
+        trim:true,
         lowercase: true
     },
     phoneNumber: {
         type: Number,
-        required: function () {
-            if (this.phoneNumber) {
-                return false
-            }
-            return true
-        }
+        // required: function () {
+        //     if (this.phoneNumber) {
+        //         return false
+        //     }
+        //     return true
+        // }
     },
     registered: {
         status: {
@@ -99,6 +100,10 @@ const {
 
 user.pre('save', async function (next) {
     try {
+
+        if(!this.phoneNumber && !this.email){
+            next('input phoneNumber and/or email')
+        }
         var user = await userModel.findOne({
             $or: [{
                 email: this.email
@@ -129,22 +134,22 @@ user.pre('save', async function (next) {
     }
 
 })
-user.pre('updateOne', async function (next) {
+user.pre('findOneAndUpdate', async function (next) {
     try {
         //check if there is a password to prevent it from being updated
-
-        if (this.password) {
+        if (this._update.password) {
             next("Cannot update password")
         }
-        // ! why is this necessary
+        // // ! why is this necessary
         var user = await userModel.findOne({
             $or: [{
-                email: this.email
+                email: this._update.email
             }, {
-                phoneNumber: this.phoneNumber
+                phoneNumber: this._update.phoneNumber
             }]
         })
-        if (user.length() != 0) {
+
+        if (user) {
             next("Cannot update email or password")
         }
         next();

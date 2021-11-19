@@ -130,15 +130,114 @@ describe('testInvalidity', async function () {
 
     it('default values are not tampered with', async () => {
         var data = await validData();
-        data['required.status'] = true;
+        data['registered.status'] = true;
         data['deleted.status'] = true;
         try {
-            
+            var results = await setDB(data)
+            expect(results.registered.status).to.be.equal(false)
+            expect(results.deleted.status).to.be.equal(false)
         } catch (error) {
-            
+            console.log(error)
+            expect(error).to.be.equal(null)
+        }
+    });
+
+    it('Return error when we have a duplicate in the data', async () => {
+        var data = await validData()
+        try {
+            await setDB(data)
+            expect(await setDB(data)).to.throw('The user already exists')
+        } catch (error) {
+            // console.log(error)
+            expect(error).to.equal('The user already exists')
+        }
+    });
+
+    it('Return error if email and phone Number do not exist', async () => {
+        try {
+            var data = await validData()
+            data['email'] = null
+            data['phoneNumber'] = null
+
+            await setDB(data)
+        } catch (error) {
+            // console.log(error)
+            expect(error).to.equal('input phoneNumber and/or email')
         }
     });
 });
+
+describe('testing hooks', async () => {
+    beforeEach(async () => {
+        await userModel.deleteMany({})
+    });
+
+    it('test the pre-save hook with valid data ', async function () {
+        var data = await validData()
+        await setDB(data)
+        var result = await userModel.find({})
+        expect(result.length).to.be.equal(1)
+    });
+
+    it('test the pre-save hooks with invalid data', async () => {
+        var data = await validData()
+        data['email'] = null
+        data['phoneNumber'] = null
+        try {
+            await setDB(data)
+        } catch (error) {
+            var result = await userModel.find({})
+            expect(result.length).to.be.equal(0)
+        }
+    });
+    it('pre-update should not allow password update', async () => {
+        var data = await validData();
+        try {
+            await setDB(data);
+
+            await userModel.findOneAndUpdate({
+                email: data.email
+            }, {
+                password: data.password
+            })
+        } catch (error) {
+            expect(error).to.be.equal('Cannot update password')
+        }
+    });
+    it('pre-update should not allow an email update', async () => {
+        var data = await validData();
+        try {
+            await setDB(data);
+
+            await userModel.findOneAndUpdate({
+                email: data.email
+            }, {
+                email: data.email
+            })
+        } catch (error) {
+            expect(error).to.be.equal('Cannot update email or password')
+        }
+
+    });
+});
+
+describe('testing methods', async () => {
+    // beforeEach(() => {
+
+    // })
+    it('test the sendcode mail');
+});
+
+describe('testing statics', async () => {
+    // beforeEach(() => {
+
+    // })
+    it('test the find by email function')
+    it('test the authentication function')
+    it('test the delete user function')
+    it('test the update password function')
+    it('test the find by phone Number function')
+})
 
 after(async () => {
     try {
