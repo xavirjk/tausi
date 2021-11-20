@@ -36,7 +36,7 @@ const user = new Schema({
         //     }
         //     return true
         // },
-        trim:true,
+        trim: true,
         lowercase: true
     },
     phoneNumber: {
@@ -101,7 +101,7 @@ const {
 user.pre('save', async function (next) {
     try {
 
-        if(!this.phoneNumber && !this.email){
+        if (!this.phoneNumber && !this.email) {
             next('input phoneNumber and/or email')
         }
         var user = await userModel.findOne({
@@ -111,7 +111,7 @@ user.pre('save', async function (next) {
                 phoneNumber: this.phoneNumber
             }]
         })
-        
+
         if (user) {
             next("The user already exists")
         }
@@ -134,24 +134,15 @@ user.pre('save', async function (next) {
     }
 
 })
+// ! review this. create seperate functions to deal with each scenario.
+
 user.pre('findOneAndUpdate', async function (next) {
     try {
         //check if there is a password to prevent it from being updated
-        if (this._update.password) {
-            next("Cannot update password")
+        if (this._update.password || this._update.email || this._update.phoneNumber) {
+            next("Cannot such personal details")
         }
         // // ! why is this necessary
-        var user = await userModel.findOne({
-            $or: [{
-                email: this._update.email
-            }, {
-                phoneNumber: this._update.phoneNumber
-            }]
-        })
-
-        if (user) {
-            next("Cannot update email or password")
-        }
         next();
     } catch (error) {
         next(error)
@@ -174,20 +165,28 @@ statics.updatePassword = async function (email, password) {
 }
 
 statics.deleteUser = async function (identifier) {
-    let user = await userModel.findOneAndUpdate({
-        $or: [{
+    if (identifier instanceof Number) {
+        var userResults = await userModel.findOneAndUpdate({
+            phoneNumber: identifier
+        }, {
+            "deleted.status": true,
+            "deleted.when": Date.now()
+        }, {
+            new: true
+        }).select('deleted')
+    } else {
+        var userResults = await userModel.findOneAndUpdate({
             email: identifier
         }, {
-            phoneNumber: identifier
-        }]
-    }, {
-        $set: {
-            "delete.declared": true,
-            "delete.when": Date.now()
-        }
-    })
-    if (user) {
-        return true
+            "deleted.status": true,
+            "deleted.when": Date.now()
+        }, {
+            new: true
+        }).select('deleted')
+    }
+
+    if (userResults) {
+        return userResults
     }
     return false
 }
@@ -204,35 +203,48 @@ methods.sendCodeMail = async function () {
 
 statics.authenticate = async function (identifier, password, host) {
     try {
-        var details = this.findOne({
-            $or: [{
-                email: identifier
-            }, {
+        if (identifier instanceof Number) {
+            var details = await userModel.findOne({
                 phoneNumber: identifier
-            }]
-        }).select("password")
+            }).select("password")
+        } else {
+            var details = await userModel.findOne({
+                email: identifier
+            }).select("password")
+        }
+        // console.log(details)
         if (!details) {
             return false
         }
         var result = await comparePassword(password, details.password)
+        // console.log(result)
+
         if (result) {
-            var user = await userModel.findOneAndUpdate({
-                $or: [{
+            if (identifier instanceof Number) {
+                var userResults = await userModel.findOneAndUpdate({
+                    phoneNumber: identifier
+                }, {
+                    $push: {
+                        ipAddress: host
+                    }
+                }).select("firstName lastName email phoneNumber registered");
+                return userResults;
+            } else {
+                var userResults = await userModel.findOneAndUpdate({
                     email: identifier
                 }, {
-                    phoneNumber: identifier
-                }]
-            }, {
-                $push: {
-                    ipAddress: host
-                }
-            })
-            return user;
+                    $push: {
+                        ipAddress: host
+                    }
+                }).select("firstName lastName email phoneNumber registered");
+                return userResults;
+            }
+
         }
 
         return false
     } catch (error) {
-        return false
+        throw error
     }
 
 }
@@ -249,7 +261,7 @@ statics.findByPhoneNumber = async function (number) {
 }
 
 statics.findByEmail = async function (email) {
-    email = email.tolowercase();
+    email = email.toLowerCase();
     var details = await this.findOne({
         email
     }).select("firstName lastName email phoneNumber registered");

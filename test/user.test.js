@@ -1,10 +1,13 @@
-const expect = require("chai").expect;
 var userModel = require("../models/users");
 const mongoose = require("mongoose");
 const bcrypt = require('bcryptjs');
 var {
     validData
 } = require('./utils/testUser')
+const {
+    expect,
+    assert
+} = require("chai");
 
 before(() => {
     mongoose.connect('mongodb://localhost/test', {
@@ -190,53 +193,93 @@ describe('testing hooks', async () => {
             expect(result.length).to.be.equal(0)
         }
     });
-    it('pre-update should not allow password update', async () => {
-        var data = await validData();
-        try {
-            await setDB(data);
-
-            await userModel.findOneAndUpdate({
-                email: data.email
-            }, {
-                password: data.password
-            })
-        } catch (error) {
-            expect(error).to.be.equal('Cannot update password')
-        }
-    });
-    it('pre-update should not allow an email update', async () => {
-        var data = await validData();
-        try {
-            await setDB(data);
-
-            await userModel.findOneAndUpdate({
-                email: data.email
-            }, {
-                email: data.email
-            })
-        } catch (error) {
-            expect(error).to.be.equal('Cannot update email or password')
-        }
-
-    });
+    it('pre-update should not allow password update');
+    it('pre-update should not allow an email update');
 });
 
 describe('testing methods', async () => {
-    // beforeEach(() => {
-
-    // })
     it('test the sendcode mail');
 });
 
 describe('testing statics', async () => {
-    // beforeEach(() => {
 
-    // })
-    it('test the find by email function')
-    it('test the authentication function')
-    it('test the delete user function')
+    it('test the find by email function', async () => {
+        var data = await validData();
+
+        await setDB(data);
+        var results = await userModel.findByEmail(
+            data.email
+        );
+        try {
+            let expected_keys = ['registered', '_id', "firstName", 'lastName', 'email', 'phoneNumber']
+            let keys = Object.keys(results.toObject())
+
+            expect(keys).to.have.members(expected_keys)
+        } catch (error) {
+            assert.fails(error)
+        }
+
+    })
+    it('test the correct authentication function', async () => {
+        var data = await validData();
+        await setDB(data);
+        try {
+            var results = await userModel.authenticate(data.email, data.password)
+            expect(results).to.be.not.equal(false)
+            let expected_keys = ['registered', '_id', "firstName", 'lastName', 'email', 'phoneNumber']
+            let keys = Object.keys(results.toObject())
+
+            expect(keys).to.have.members(expected_keys)
+        } catch (error) {
+            assert.fail(error)
+        }
+    })
+
+    it('test the incorrect authentication function', async () => {
+        var data = await validData();
+        await setDB(data);
+        try {
+            var results = await userModel.authenticate(data.email, data.firstName)
+
+            expect(results).to.be.equal(false)
+        } catch (error) {
+            assert.fail(error);
+        }
+    })
+
+    it('test the delete user function', async () => {
+        var data = await validData();
+
+        await setDB(data);
+        try {
+            var result = await userModel.deleteUser(data.email)
+            var keys = Object.keys(result.toObject())
+
+            expect(keys).to.have.members(['deleted','_id'])
+            expect(result.deleted.status).to.be.equal(true)
+        } catch (error) {
+            assert.fail(`${error}`)
+        }
+    })
+
     it('test the update password function')
-    it('test the find by phone Number function')
+
+    it('test the find by phone Number function', async () => {
+        var data = await validData();
+
+        await setDB(data);
+        var results = await userModel.findByPhoneNumber(
+            data.phoneNumber
+        );
+        try {
+            let expected_keys = ['registered', '_id', "firstName", 'lastName', 'email', 'phoneNumber']
+            let keys = Object.keys(results.toObject())
+
+            expect(keys).to.have.members(expected_keys)
+        } catch (error) {
+            assert.fail(error)
+        }
+    })
 })
 
 after(async () => {
